@@ -149,12 +149,12 @@
                                 {% if item.ref_id == 'NEW' %}
                                     <button class="btn btn-sm btn-success w-100" 
                                             onclick="addNewRule(this, '{{ item.recommendation | replace("'", "\\'") }}')">
-                                        + Ekle
+                                        + Add
                                     </button>
                                 {% else %}
                                     <button class="btn btn-sm btn-primary w-100" 
                                             onclick="updateExistingRule(this, '{{ item.ref_id }}', '{{ item.recommendation | replace("'", "\\'") }}')">
-                                        ✎ Düzenle
+                                        ✎ Edit
                                     </button>
                                 {% endif %}
                             </td>
@@ -166,32 +166,6 @@
         </div>
     </div>
     {% endif %}
-
-<!--
-    {% if missing_rules %}
-    <div class="card shadow mb-4 border-warning">
-        <div class="card-header bg-warning text-dark">
-            <h4 class="mb-0">⚠️ 3. Detect Missing Rules (Analysis)</h4>
-        </div>
-        <div class="card-body">
-            <p class="lead">The AI analyzed your requirements and suggests considering these potentially missing rules:</p>
-            <ul class="list-group">
-                {% for m_rule in missing_rules %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span class="me-3">{{ m_rule }}</span>
-                    
-                    <button class="btn btn-success btn-sm fw-bold" 
-                            onclick="addMissingRule(this, '{{ m_rule | replace("'", "\\'") }}')">
-                        + Ekle
-                    </button>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-    {% endif %}
-
--->
 
     {% if analysis_data %}
     <div class="card shadow mb-4 border-primary">
@@ -308,7 +282,7 @@
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0">7. Generated SQL Code</h4>
             <div>
-                {% if db_status and "BAŞARILI" in db_status %}
+                {% if db_status and "SUCCESS" in db_status %}
                     <span class="badge bg-success">{{ db_status }}</span>
                 {% elif db_status %}
                     <span class="badge bg-danger">{{ db_status }}</span>
@@ -336,9 +310,9 @@
 </script>
 
 <script>
-    // 1. YENİ KURAL EKLEME (ID: NEW)
+    // 1. ADD NEW RULE (ID: NEW)
     function addNewRule(btnElement, ruleText) {
-        // Business Rules tablosunu bul (Sayfadaki ilk tablo)
+        // Find the Business Rules table (First table on the page)
         const tableBody = document.querySelector('.table tbody');
         
         if (tableBody) {
@@ -351,7 +325,7 @@
                 <td><span class="badge bg-secondary">User Confirmed</span></td>
                 <td><small class="text-muted">Added from suggestions.</small></td>
             `;
-            // Görsel Efekt
+            // Visual Effect
             newRow.style.backgroundColor = "#d4edda";
             setTimeout(() => { newRow.style.transition = "background 1s"; newRow.style.backgroundColor = "transparent"; }, 1000);
         }
@@ -360,31 +334,29 @@
         
         btnElement.className = "btn btn-sm btn-secondary w-100";
         btnElement.disabled = true;
-        btnElement.innerHTML = "✓ Eklendi";
+        btnElement.innerHTML = "✓ Added";
     }
 
-    // 2. MEVCUT KURALI GÜNCELLEME (ID: SAYI)
+    // 2. UPDATE EXISTING RULE (ID: NUMBER)
     function updateExistingRule(btnElement, refId, newText) {
-        // Business Rules tablosundaki tüm satırları gez
-        // Not: İlk tablo Business Rules tablosudur
+        // Iterate through all rows in the Business Rules table
+        // Note: The main table is the Business Rules table
         const mainTable = document.querySelector('.card-header.bg-success').nextElementSibling.querySelector('table tbody');
         const rows = mainTable.querySelectorAll('tr');
         let found = false;
 
         rows.forEach(row => {
-            // İlk hücre (ID sütunu) içindeki metni kontrol et
+            // Check the text inside the first cell (ID column)
             const idCell = row.cells[0]; 
-            // ID hücresi "1", "2" veya badge içinde "1" olabilir. Metin kontrolü yapıyoruz.
+            // ID cell could be "1", "2", or "1" inside a badge. We check the text.
             if (idCell && idCell.innerText.trim() == refId) {
                 
-                // 3. Sütun (Rule Statement) güncellenir (Index 2)
                 const statementCell = row.cells[2];
                 const oldText = statementCell.innerText;
                 
                 statementCell.innerHTML = `${newText} <span class="badge bg-warning text-dark ms-1">Updated</span>`;
                 statementCell.style.backgroundColor = "#fff3cd"; 
 
-                // 5. Sütun (Implementation Tip) da güncellendi bilgisi ver
                 if(row.cells[4]) row.cells[4].innerHTML = '<span class="badge bg-secondary">Revised by AI</span>';
 
                 updateConstraintsInput(newText, "update", oldText);
@@ -395,13 +367,13 @@
         if (found) {
             btnElement.className = "btn btn-sm btn-secondary w-100";
             btnElement.disabled = true;
-            btnElement.innerHTML = "✓ Düzenlendi";
+            btnElement.innerHTML = "✓ Edited";
         } else {
-            alert("Hata: Yukarıdaki tabloda ID " + refId + " bulunamadı!");
+            alert("Error: ID " + refId + " not found in the table above!");
         }
     }
 
-    // YARDIMCI: Form inputunu güncelleme
+    //  Update the form input
     function updateConstraintsInput(text, mode, oldText = "") {
         const textarea = document.querySelector('textarea[name="constraints"]');
         if (!textarea) return;
@@ -409,11 +381,11 @@
         if (mode === "add") {
             textarea.value += "\n- " + text;
         } else if (mode === "update" && oldText) {
-            // Eski metni yenisiyle değiştir
+            // Replace old text with the new one
             if (textarea.value.includes(oldText)) {
                  textarea.value = textarea.value.replace(oldText, text);
             } else {
-                 // Metin birebir bulunamazsa sona ekle
+                 // If exact text isn't found, append to the end
                  textarea.value += "\n- (Updated Rule " + text + ")";
             }
         }
@@ -423,51 +395,5 @@
     }
 </script>
 
-
-<!--
-<script>
-    function addMissingRule(btnElement, ruleText) {
-        // 1. İş Kuralları Tablosunu Bul (Business Rules Table)
-        // Tabloyu bulmak için sayfadaki ilk tabloyu veya class yapısını kullanıyoruz
-        const tableBody = document.querySelector('.table tbody');
-        
-        if (tableBody) {
-            // Yeni bir satır oluştur
-            const newRow = tableBody.insertRow();
-            
-            // Satırın içeriğini doldur (Manual eklendiği için bazı alanlar standart doldurulur)
-            newRow.innerHTML = `
-                <td><span class="badge bg-info">NEW</span></td>
-                <td>Constraint</td>
-                <td>${ruleText}</td>
-                <td><strong>Manual Addition</strong></td>
-                <td><span class="badge bg-secondary">User Confirmed</span></td>
-                <td><small class="text-muted">Added from missing rules suggestions.</small></td>
-            `;
-            
-            // Yeni satırı vurgula (Sarı yanıp sönme efekti)
-            newRow.style.backgroundColor = "#fff3cd";
-            setTimeout(() => { newRow.style.transition = "background 1s"; newRow.style.backgroundColor = "transparent"; }, 500);
-        }
-
-        // 2. Formdaki "Constraints" alanına bu kuralı ekle
-        // Böylece kullanıcı tekrar "Generate" yaparsa yapay zeka bu kuralı da işler.
-        const constraintsInput = document.querySelector('textarea[name="constraints"]');
-        if (constraintsInput) {
-            constraintsInput.value += "\n- " + ruleText;
-            
-            // Kullanıcıya bilgi vermek için input alanını kısaca parlat
-            constraintsInput.style.borderColor = "green";
-            setTimeout(() => constraintsInput.style.borderColor = "", 1000);
-        }
-
-        // 3. Butonu pasif hale getir (Tekrar basılmasın)
-        btnElement.classList.remove('btn-success');
-        btnElement.classList.add('btn-secondary');
-        btnElement.disabled = true;
-        btnElement.innerHTML = "✓ Eklendi";
-    }
-</script>
--->
 </body>
 </html>
