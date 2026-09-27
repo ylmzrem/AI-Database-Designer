@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # SETTINGS (PLEASE CHECK)
 # 1. Your API Key
-GEMINI_API_KEY = "KENDI_API_ANAHTARINIZI_GIRIN" 
+GEMINI_API_KEY = "ENTER_YOUR_OWN_API_KEY" 
 
 # 2. phpMyAdmin (MySQL) Connection Details
 # If you are using XAMPP, the password is usually empty.
