@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Design Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .code-block {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            border-radius: 5px;
+        }
+        .mermaid {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5 mb-5">
+    
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold text-primary">Database Design Assistant</h1>
+        <p class="lead text-muted">AI-Powered Database Modeling Tool (0NF &rarr; 3NF &rarr; SQL)</p>
+    </div>
+
+    <div class="card shadow mb-5">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">1. Project Definition</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Domain:</label>
+                        <input type="text" name="domain" class="form-control" placeholder="e.g., University Library System" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Primary Entity Focus:</label>
+                        <input type="text" name="primary_entity" class="form-control" placeholder="e.g., Students, Books, Loans" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Constraint/Rule:</label>
+                    <textarea name="constraints" class="form-control" rows="2" placeholder="e.g., Max 3 books per student. Books must be returned in 15 days."></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Advanced Feature / Trigger:</label>
+                        <textarea name="advanced_features" class="form-control" rows="2" placeholder="e.g., Auto-calculate fines for late returns."></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Security / Access Control:</label>
+                        <textarea name="security" class="form-control" rows="2" placeholder="e.g., Only Librarians can add books."></textarea>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Reporting Requirement:</label>
+                        <textarea name="reporting" class="form-control" rows="2" placeholder="e.g., List students with overdue books."></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Common Tasks:</label>
+                        <textarea name="common_tasks" class="form-control" rows="2" placeholder="e.g., Borrow book, Return book, Search book."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg">Generate Database Design &rarr;</button>
+            </form>
+        </div>
+    </div>
+
+    {% if rules %}
+    
+    <hr class="my-5 border-3">
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0">2. Business Rules Extraction</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Rule Statement</th>
+                            <th>ER Component</th>
+                            <th>Implementation Tip</th>
+                            <th>Rationale</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rule in rules %}
+                        <tr>
+                            <td><span class="badge bg-primary">{{ rule.id }}</span></td>
+                            <td>{{ rule.type }}</td>
+                            <td>{{ rule.statement }}</td>
+                            <td><strong>{{ rule.component }}</strong></td>
+                            <td><span class="badge bg-warning text-dark">{{ rule.tip }}</span></td>
+                            <td><small class="text-muted">{{ rule.rationale }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% if missing_rules %}
+    <div class="card shadow mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">⚠️ 3. Detect Missing Rules & Improvements</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">The AI analyzed your existing rules and suggests the following actions:</p>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 10%;">Ref ID</th>
+                            <th style="width: 25%;">Issue / Gap</th>
+                            <th>Recommendation (Proposed Rule)</th>
+                            <th style="width: 15%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in missing_rules %}
+                        <tr>
+                            <td>
+                                {% if item.ref_id == 'NEW' %}
+                                    <span class="badge bg-success">NEW</span>
+                                {% else %}
+                                    <span class="badge bg-primary">ID: {{ item.ref_id }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-danger small">{{ item.issue }}</td>
+                            <td class="fw-bold text-dark">{{ item.recommendation }}</td>
+                            <td>
+                                {% if item.ref_id == 'NEW' %}
+                                    <button class="btn btn-sm btn-success w-100" 
+                                            onclick="addNewRule(this, '{{ item.recommendation | replace("'", "\\'") }}')">
+                                        + Ekle
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-primary w-100" 
+                                            onclick="updateExistingRule(this, '{{ item.ref_id }}', '{{ item.recommendation | replace("'", "\\'") }}')">
+                                        ✎ Düzenle
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+<!--
+    {% if missing_rules %}
+    <div class="card shadow mb-4 border-warning">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">⚠️ 3. Detect Missing Rules (Analysis)</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">The AI analyzed your requirements and suggests considering these potentially missing rules:</p>
+            <ul class="list-group">
+                {% for m_rule in missing_rules %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="me-3">{{ m_rule }}</span>
+                    
+                    <button class="btn btn-success btn-sm fw-bold" 
+                            onclick="addMissingRule(this, '{{ m_rule | replace("'", "\\'") }}')">
+                        + Ekle
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+-->
+
+    {% if analysis_data %}
+    <div class="card shadow mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">🧠 3.1 Structural & Performance Analysis</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-light h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">🏆 Central Entity (B1)</h5>
+                            <p class="card-text">{{ analysis_data.central_entity }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">🔥 Most Expensive Rule (A3)</h5>
+                            <p class="card-text">{{ analysis_data.expensive_rule }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">⚡ Performance Tip (C2)</h5>
+                            <p class="card-text">{{ analysis_data.denormalization_tip }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if normalization_html %}
+    <div class="card shadow mb-4 border-info">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">🔄 4. Normalization (0NF &rarr; 3NF)</h4>
+        </div>
+        <div class="card-body">
+            {{ normalization_html | safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if tables %}
+    <div class="card shadow mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">5. ER Tables (Normalized Schema)</h4>
+        </div>
+        <div class="card-body bg-light">
+            <p>The system has identified the following entities and attributes based on 3NF:</p>
+            <div class="row">
+                {% for table in tables %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 border-secondary">
+                        <div class="card-header bg-secondary text-white fw-bold">
+                            Table: {{ table.name }}
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Column</th>
+                                        <th>Type</th>
+                                        <th>Constraints</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for col in table.columns %}
+                                    <tr>
+                                        <td>{{ col.name }}</td>
+                                        <td><code>{{ col.type }}</code></td>
+                                        <td>
+                                            {% if 'PRIMARY' in col.constraints %}
+                                                <span class="badge bg-warning text-dark">PK</span>
+                                            {% elif 'FOREIGN' in col.constraints %}
+                                                <span class="badge bg-info text-dark">FK</span>
+                                            {% else %}
+                                                <small class="text-muted">{{ col.constraints }}</small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if diagram_code %}
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">6. ER Diagram (Crow's Foot Notation)</h4>
+        </div>
+        <div class="card-body text-center bg-white">
+            <div class="mermaid">
+                {{ diagram_code }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if sql_code %}
+    <div class="card shadow mb-5">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">7. Generated SQL Code</h4>
+            <div>
+                {% if db_status and "BAŞARILI" in db_status %}
+                    <span class="badge bg-success">{{ db_status }}</span>
+                {% elif db_status %}
+                    <span class="badge bg-danger">{{ db_status }}</span>
+                {% else %}
+                    <span class="badge bg-secondary">Ready to Run</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <textarea class="form-control code-block" rows="15" readonly>{{ sql_code }}</textarea>
+            <div class="mt-3">
+                <p class="text-muted small">
+                    This script includes Table Creation, Primary/Foreign Keys, Constraints, and Trigger definitions.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %} </div>
+
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+
+<script>
+    // 1. YENİ KURAL EKLEME (ID: NEW)
+    function addNewRule(btnElement, ruleText) {
+        // Business Rules tablosunu bul (Sayfadaki ilk tablo)
+        const tableBody = document.querySelector('.table tbody');
+        
+        if (tableBody) {
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                <td><span class="badge bg-info">NEW</span></td>
+                <td>Constraint</td>
+                <td>${ruleText}</td>
+                <td><strong>Manual Addition</strong></td>
+                <td><span class="badge bg-secondary">User Confirmed</span></td>
+                <td><small class="text-muted">Added from suggestions.</small></td>
+            `;
+            // Görsel Efekt
+            newRow.style.backgroundColor = "#d4edda";
+            setTimeout(() => { newRow.style.transition = "background 1s"; newRow.style.backgroundColor = "transparent"; }, 1000);
+        }
+        
+        updateConstraintsInput(ruleText, "add");
+        
+        btnElement.className = "btn btn-sm btn-secondary w-100";
+        btnElement.disabled = true;
+        btnElement.innerHTML = "✓ Eklendi";
+    }
+
+    // 2. MEVCUT KURALI GÜNCELLEME (ID: SAYI)
+    function updateExistingRule(btnElement, refId, newText) {
+        // Business Rules tablosundaki tüm satırları gez
+        // Not: İlk tablo Business Rules tablosudur
+        const mainTable = document.querySelector('.card-header.bg-success').nextElementSibling.querySelector('table tbody');
+        const rows = mainTable.querySelectorAll('tr');
+        let found = false;
+
+        rows.forEach(row => {
+            // İlk hücre (ID sütunu) içindeki metni kontrol et
+            const idCell = row.cells[0]; 
+            // ID hücresi "1", "2" veya badge içinde "1" olabilir. Metin kontrolü yapıyoruz.
+            if (idCell && idCell.innerText.trim() == refId) {
+                
+                // 3. Sütun (Rule Statement) güncellenir (Index 2)
+                const statementCell = row.cells[2];
+                const oldText = statementCell.innerText;
+                
+                statementCell.innerHTML = `${newText} <span class="badge bg-warning text-dark ms-1">Updated</span>`;
+                statementCell.style.backgroundColor = "#fff3cd"; 
+
+                // 5. Sütun (Implementation Tip) da güncellendi bilgisi ver
+                if(row.cells[4]) row.cells[4].innerHTML = '<span class="badge bg-secondary">Revised by AI</span>';
+
+                updateConstraintsInput(newText, "update", oldText);
+                found = true;
+            }
+        });
+
+        if (found) {
+            btnElement.className = "btn btn-sm btn-secondary w-100";
+            btnElement.disabled = true;
+            btnElement.innerHTML = "✓ Düzenlendi";
+        } else {
+            alert("Hata: Yukarıdaki tabloda ID " + refId + " bulunamadı!");
+        }
+    }
+
+    // YARDIMCI: Form inputunu güncelleme
+    function updateConstraintsInput(text, mode, oldText = "") {
+        const textarea = document.querySelector('textarea[name="constraints"]');
+        if (!textarea) return;
+
+        if (mode === "add") {
+            textarea.value += "\n- " + text;
+        } else if (mode === "update" && oldText) {
+            // Eski metni yenisiyle değiştir
+            if (textarea.value.includes(oldText)) {
+                 textarea.value = textarea.value.replace(oldText, text);
+            } else {
+                 // Metin birebir bulunamazsa sona ekle
+                 textarea.value += "\n- (Updated Rule " + text + ")";
+            }
+        }
+        
+        textarea.style.borderColor = "#28a745";
+        setTimeout(() => textarea.style.borderColor = "", 1000);
+    }
+</script>
+
+
+<!--
+<script>
+    function addMissingRule(btnElement, ruleText) {
+        // 1. İş Kuralları Tablosunu Bul (Business Rules Table)
+        // Tabloyu bulmak için sayfadaki ilk tabloyu veya class yapısını kullanıyoruz
+        const tableBody = document.querySelector('.table tbody');
+        
+        if (tableBody) {
+            // Yeni bir satır oluştur
+            const newRow = tableBody.insertRow();
+            
+            // Satırın içeriğini doldur (Manual eklendiği için bazı alanlar standart doldurulur)
+            newRow.innerHTML = `
+                <td><span class="badge bg-info">NEW</span></td>
+                <td>Constraint</td>
+                <td>${ruleText}</td>
+                <td><strong>Manual Addition</strong></td>
+                <td><span class="badge bg-secondary">User Confirmed</span></td>
+                <td><small class="text-muted">Added from missing rules suggestions.</small></td>
+            `;
+            
+            // Yeni satırı vurgula (Sarı yanıp sönme efekti)
+            newRow.style.backgroundColor = "#fff3cd";
+            setTimeout(() => { newRow.style.transition = "background 1s"; newRow.style.backgroundColor = "transparent"; }, 500);
+        }
+
+        // 2. Formdaki "Constraints" alanına bu kuralı ekle
+        // Böylece kullanıcı tekrar "Generate" yaparsa yapay zeka bu kuralı da işler.
+        const constraintsInput = document.querySelector('textarea[name="constraints"]');
+        if (constraintsInput) {
+            constraintsInput.value += "\n- " + ruleText;
+            
+            // Kullanıcıya bilgi vermek için input alanını kısaca parlat
+            constraintsInput.style.borderColor = "green";
+            setTimeout(() => constraintsInput.style.borderColor = "", 1000);
+        }
+
+        // 3. Butonu pasif hale getir (Tekrar basılmasın)
+        btnElement.classList.remove('btn-success');
+        btnElement.classList.add('btn-secondary');
+        btnElement.disabled = true;
+        btnElement.innerHTML = "✓ Eklendi";
+    }
+</script>
+-->
+</body>
+</html>
