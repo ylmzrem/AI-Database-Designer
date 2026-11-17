@@ -19,8 +19,8 @@ A Flask-based web application that automates database design from natural langua
 ### 🚀 Setup & Installation
 1. **📂 Clone the Repository:**
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/ylmzrem/AI-Database-Designer.git
+   cd AI-Database-Designer
    ```
 2. **📦 Install Dependencies:**
    ```bash
@@ -60,8 +60,8 @@ Google Gemini yapay zekasını kullanarak metinsel gereksinimlerden otomatik ver
 ### 🚀 Kurulum Adımları
 1. **📂 Repoyu Klonlayın:**
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/ylmzrem/AI-Database-Designer.git
+   cd AI-Database-Designer
    ```
 2. **📦 Gerekli Kütüphaneleri Yükleyin:**
    ```bash
